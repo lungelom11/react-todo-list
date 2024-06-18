@@ -1,50 +1,52 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { NewTodoForm } from "./NewTodoForm";
 import "./style.css";
+import { TodoList } from "./TodoList";
 
-const App = () => {
-  const [newItem, setNewItem] = useState("");
-  const [todos, setTodos] = useState([]);
+export default function App() {
+  const [todos, setTodos] = useState(() => {
+    const localValue = localStorage.getItem("ITEMS");
+    if (localValue == null) return [];
 
-  function handleSubmit(e) {
-    e.preventDefault();
+    return JSON.parse(localValue);
+  });
 
+  useEffect(() => {
+    localStorage.setItem("ITEMS", JSON.stringify(todos));
+  }, [todos]);
+
+  function addTodo(title) {
     setTodos((currentTodos) => {
       return [
         ...currentTodos,
-        { id: crypto.randomUUID(), title: newItem, completed: true },
+        { id: crypto.randomUUID(), title, completed: false },
       ];
     });
   }
 
-  console.log(todos);
+  function toggleTodo(id, completed) {
+    setTodos((currentTodos) => {
+      return currentTodos.map((todo) => {
+        if (todo.id === id) {
+          return { ...todo, completed };
+        }
+
+        return todo;
+      });
+    });
+  }
+
+  function deleteTodo(id) {
+    setTodos((currentTodos) => {
+      return currentTodos.filter((todo) => todo.id !== id);
+    });
+  }
+
   return (
     <>
-      <form onSubmit={handleSubmit} className="new-item-form">
-        <div className="form-row">
-          <label htmlFor="item">New Item</label>
-          <input
-            value={newItem}
-            onChange={(e) => setNewItem(e.target.value)}
-            type="text"
-            id="item"
-          />
-          <button className="btn">Add</button>
-        </div>
-      </form>
-      <h1 className="header">List Items</h1>
-      <ul className="list">
-        {todos.map((todo) => (
-          <li key={todo.id}>
-            <label>
-              <input type="checkbox" checked={todo.completed} />
-              {todo.title}
-            </label>
-            <button className="btn btn-danger">Delete</button>
-          </li>
-        ))}
-      </ul>
+      <NewTodoForm onSubmit={addTodo} />
+      <h1 className="header">Todo List</h1>
+      <TodoList todos={todos} toggleTodo={toggleTodo} deleteTodo={deleteTodo} />
     </>
   );
-};
-
-export default App;
+}
